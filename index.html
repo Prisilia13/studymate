@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viemport-fit=cover">
     <title>StudyMate - Aplikasi Belajar Mahasiswa</title>
     <style>
         :root {
@@ -73,7 +73,7 @@
             display: flex;
             flex-direction: column;
             overflow-y: auto;
-            padding-bottom: 80px; /* Space agar tidak tertutup bottom navbar */
+            padding-bottom: 90px; /* Space agar tidak tertutup bottom navbar */
         }
 
         /* Pengaturan Tampilan Tiap Screen */
@@ -444,19 +444,19 @@
         .badge-title { font-size: 10px; color: var(--text-muted); margin-top: 4px; }
 
         /* NATIVE BOTTOM NAVIGATION BAR (SIMULASI) */
-        .bottom-nav {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 70px;
-            background-color: var(--card-bg);
-            border-top: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            z-index: 100;
-            padding-bottom: 12px;
+       .bottom-nav {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 75px; /* Sedikit lebih tinggi agar nyaman */
+        background-color: var(--card-bg);
+        border-top: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        z-index: 100;
+        padding-bottom: env(safe-area-inset-bottom, 15px); /* Mengikuti area aman HP */
         }
 
         .nav-item {
