@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>StudyMate - Aplikasi Belajar Mahasiswa</title>
+    <style>
+        :root {
+            --primary: #FF527B;
+            --primary-light: #FFEBF0;
+            --bg-color: #FAFAFA;
+            --text-dark: #2D2D2D;
+            --text-muted: #7D7D7D;
+            --card-bg: #FFFFFF;
+            --border-color: #EEEEEE;
+            --high-priority: #FF4D4D;
+            --medium-priority: #FFA500;
+            --low-priority: #4CAF50;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #1e1e1e; /* Background gelap khas VS Code editor untuk preview PC */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-dark);
+        }
+
+        /* Container Pembungkus agar pas seukuran Layar HP Android */
+        .phone-container {
+            width: 100%;
+            max-width: 412px; /* Standar resolusi Google Pixel / Android modern */
+            height: 100vh;
+            max-height: 892px;
+            background-color: var(--bg-color);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Android Status Bar Simulation */
+        .status-bar {
+            height: 35px;
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 24px 0 24px;
+            font-size: 13px;
+            font-weight: 600;
+            z-index: 10;
+        }
+
+        .status-bar .icons {
+            display: flex;
+            gap: 6px;
+        }
+
+        /* Konten Utama Aplikasi */
+        .app-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            padding-bottom: 80px; /* Space agar tidak tertutup bottom navbar */
+        }
+
+        /* Pengaturan Tampilan Tiap Screen */
+        .app-screen {
+            display: none;
+            flex-direction: column;
+            padding: 16px 20px;
+            width: 100%;
+            animation: fadeIn 0.25s ease-out;
+        }
+
+        .app-screen.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Global UI Reusable Components */
+        .header-title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        
+        .header-subtitle {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 18px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            border: 1px solid rgba(0,0,0,0.01);
+        }
+
+        /* 1. DASHBOARD SCREEN & PROGRESS */
+        .progress-circle-container {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .circle-progress {
+            position: relative;
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            background: conic-gradient(var(--primary) 75%, #FFEBF0 0);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .circle-progress::before {
+            content: "";
+            position: absolute;
+            width: 53px;
+            height: 53px;
+            border-radius: 50%;
+            background: var(--card-bg);
+        }
+
+        .circle-text {
+            position: relative;
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .progress-info h4 { font-size: 14px; margin-bottom: 2px; }
+
+        .progress-bar-linear {
+            width: 130px;
+            height: 6px;
+            background-color: #FFEBF0;
+            border-radius: 3px;
+            margin-top: 6px;
+            overflow: hidden;
+        }
+
+        .progress-fill { width: 75%; height: 100%; background-color: var(--primary); }
+
+        .schedule-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            font-size: 13px;
+        }
+
+        .schedule-time { width: 55px; font-weight: 600; }
+        .schedule-dot { width: 8px; height: 8px; border-radius: 50%; margin-right: 12px; }
+        .dot-math { background-color: #4A90E2; }
+        .dot-db { background-color: #50E3C2; }
+        .dot-english { background-color: #F5A623; }
+
+        .quick-nav-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 4px;
+        }
+
+        .quick-btn {
+            background-color: var(--primary-light);
+            color: var(--primary);
+            padding: 12px;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+        }
+
+        /* 2. TO-DO LIST & TABS */
+        .tab-bar {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .tab-item {
+            font-size: 14px;
+            color: var(--text-muted);
+            padding-bottom: 8px;
+            cursor: pointer;
+        }
+
+        .tab-item.active {
+            color: var(--primary);
+            font-weight: 700;
+            border-bottom: 2px solid var(--primary);
+        }
+
+        .todo-item {
+            display: flex;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid #FDFDFD;
+        }
+
+        .todo-checkbox {
+            width: 18px;
+            height: 18px;
+            border: 2px solid #DDD;
+            border-radius: 4px;
+            margin-top: 2px;
+        }
+
+        .todo-details h4 { font-size: 14px; }
+        .todo-details p { font-size: 11px; color: var(--text-muted); margin: 2px 0 6px 0; }
+        
+        .badge-priority {
+            display: inline-block;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+        .p-high { background-color: #FFEAEA; color: var(--high-priority); }
+        .p-medium { background-color: #FFF4E5; color: var(--medium-priority); }
+        .p-low { background-color: #EAF7EA; color: var(--low-priority); }
+
+        /* 3 & 8. SEARCH & FOLDER */
+        .search-container {
+            position: relative;
+            margin-bottom: 16px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 14px 12px 38px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            background-color: #F5F5F5;
+            font-size: 13px;
+            outline: none;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 14px;
+            top: 13px;
+            color: var(--text-muted);
+        }
+
+        .folder-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px;
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border-color);
+        }
+
+        .folder-icon { font-size: 22px; color: #FFB74D; }
+
+        /* 4. POMODORO TIMER */
+        .countdown-circle {
+            width: 190px;
+            height: 190px;
+            border-radius: 50%;
+            border: 6px solid var(--primary-light);
+            border-top-color: var(--primary);
+            margin: 20px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .timer-numbers { font-size: 36px; font-weight: 700; }
+
+        .btn-main {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 48px;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 600;
+            margin: 20px auto 0 auto;
+            display: block;
+            box-shadow: 0 4px 12px rgba(255, 82, 123, 0.3);
+        }
+
+        /* 5. GRUP BELAJAR */
+        .grup-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px;
+            background-color: var(--card-bg);
+            border-radius: 14px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border-color);
+        }
+
+        .grup-info { display: flex; align-items: center; gap: 12px; }
+        .grup-avatar {
+            width: 38px;
+            height: 38px;
+            background-color: var(--primary-light);
+            color: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        /* 6. GRAPHICS */
+        .chart-mock {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            height: 100px;
+            margin-top: 15px;
+        }
+
+        .chart-bar-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .chart-bar {
+            width: 14px;
+            background-color: var(--primary);
+            border-radius: 4px 4px 0 0;
+        }
+
+        .chart-day { font-size: 11px; color: var(--text-muted); }
+
+        /* 7. AI ASSISTANT CHAT */
+        .ai-chat-box {
+            background-color: #FFF5F7;
+            border-radius: 16px;
+            padding: 14px;
+            margin-bottom: 12px;
+            border-left: 4px solid var(--primary);
+            font-size: 13px;
+        }
+
+        .chat-input-wrapper {
+            display: flex;
+            gap: 8px;
+            margin-top: 20px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 16px;
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+            outline: none;
+            font-size: 13px;
+        }
+
+        .chat-send-btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 9. MODE FOKUS */
+        .focus-card {
+            background: linear-gradient(135deg, #FF7B9B, #FF527B);
+            color: white;
+            padding: 24px;
+            border-radius: 20px;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .focus-card button {
+            background-color: white;
+            color: var(--primary);
+            border: none;
+            padding: 10px 24px;
+            border-radius: 20px;
+            font-weight: 600;
+            margin-top: 16px;
+        }
+
+        /* 10. STREAK & REWARD */
+        .streak-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background-color: #FFF8F0;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid #FFE0B2;
+        }
+
+        .badge-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .badge-item {
+            padding: 12px 8px;
+            background-color: #F9F9F9;
+            border-radius: 12px;
+            font-size: 20px;
+        }
+
+        .badge-title { font-size: 10px; color: var(--text-muted); margin-top: 4px; }
+
+        /* NATIVE BOTTOM NAVIGATION BAR (SIMULASI) */
+        .bottom-nav {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 70px;
+            background-color: var(--card-bg);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 100;
+            padding-bottom: 12px;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 11px;
+            color: var(--text-muted);
+            cursor: pointer;
+            width: 20%;
+        }
+
+        .nav-item.active {
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .nav-icon { font-size: 20px; margin-bottom: 2px; }
+
+        /* DEMO SCREEN DROP-DOWN (Memudahkan kamu tes ke-10 fitur di mockup lewat HP) */
+        .demo-selector {
+            position: absolute;
+            top: 4px;
+            right: 12px;
+            background: var(--primary);
+            color: white;
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            z-index: 1000;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .demo-menu {
+            display: none;
+            position: absolute;
+            top: 32px;
+            right: 12px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            z-index: 1001;
+            width: 200px;
+            max-height: 280px;
+            overflow-y: auto;
+        }
+        
+        .demo-menu div {
+            padding: 10px 14px;
+            font-size: 12px;
+            border-bottom: 1px solid #EEE;
+            cursor: pointer;
+        }
+        
+        .demo-menu div:hover { background-color: var(--primary-light); }
+
+        /* CSS Responsive: khusus jika dibuka langsung di handphone full screen */
+        @media (max-width: 450px) {
+            body { background-color: var(--bg-color); }
+            .phone-container {
+                max-width: 100%;
+                height: 100vh;
+                max-height: 100vh;
+                border-radius: 0;
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="phone-container">
+        <div class="demo-selector" onclick="toggleDemoMenu()">Lihat 10 Layar Mockup ▾</div>
+        <div class="demo-menu" id="demoMenu">
+            <div onclick="goToScreen('screen-dashboard')">1. Dashboard (Beranda)</div>
+            <div onclick="goToScreen('screen-todo')">2. To-Do List Tugas</div>
+            <div onclick="goToScreen('screen-catatan')">3. Catatan Kuliah</div>
+            <div onclick="goToScreen('screen-timer')">4. Timer Fokus (Pomodoro)</div>
+            <div onclick="goToScreen('screen-grup')">5. Grup Belajar</div>
+            <div onclick="goToScreen('screen-progress')">6. Progress Belajar</div>
+            <div onclick="goToScreen('screen-ai')">7. AI Study Assistant</div>
+            <div onclick="goToScreen('screen-pencarian')">8. Pencarian Materi</div>
+            <div onclick="goToScreen('screen-fokus-mode')">9. Mode Fokus Screen</div>
+            <div onclick="goToScreen('screen-gamifikasi')">10. Motivasi & Gamifikasi</div>
+        </div>
+
+        <div class="status-bar">
+            <div>14:30</div>
+            <div class="icons">
+                <span>📶</span> <span>🔋</span>
+            </div>
+        </div>
+
+        <div class="app-content">
+            
+            <div id="screen-dashboard" class="app-screen active">
+                <div class="header-title">Halo, Maya! 👋</div>
+                <div class="header-subtitle">Semangat belajar hari ini!</div>
+                
+                <div class="card">
+                    <div class="progress-circle-container">
+                        <div class="circle-progress">
+                            <div class="circle-text">75%</div>
+                        </div>
+                        <div class="progress-info">
+                            <h4>Progress Mingguan</h4>
+                            <p style="font-size: 11px; color: var(--text-muted)">6/8 tugas selesai</p>
+                            <div class="progress-bar-linear">
+                                <div class="progress-fill"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 style="font-size: 14px; margin-bottom: 8px;">Jadwal Hari Ini</h3>
+                <div class="card" style="padding: 12px 14px;">
+                    <div class="schedule-item">
+                        <span class="schedule-time">09.00</span>
+                        <span class="schedule-dot dot-math"></span>
+                        <span>Matematika</span>
+                    </div>
+                    <div class="schedule-item">
+                        <span class="schedule-time">11.00</span>
+                        <span class="schedule-dot dot-db"></span>
+                        <span>Basis Data</span>
+                    </div>
+                    <div class="schedule-item">
+                        <span class="schedule-time">14.00</span>
+                        <span class="schedule-dot dot-english"></span>
+                        <span>Bahasa Inggris</span>
+                    </div>
+                </div>
+
+                <h3 style="font-size: 14px; margin-bottom: 8px;">Tugas Mendekat</h3>
+                <div class="card" style="border-left: 4px solid var(--high-priority); padding: 12px;">
+                    <div style="font-size: 13px; font-weight:600;">Laporan UI/UX</div>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Deadline 3 Mei</div>
+                </div>
+                
+                <div class="quick-nav-grid">
+                    <button class="quick-btn" onclick="goToScreen('screen-ai')">🤖 Asisten AI</button>
+                    <button class="quick-btn" onclick="goToScreen('screen-fokus-mode')">👁️ Mode Fokus</button>
+                </div>
+            </div>
+
+            <div id="screen-todo" class="app-screen">
+                <div class="header-title">Tugas</div>
+                <div class="header-subtitle">Daftar tugas dengan deadline dan prioritas</div>
+                
+                <div class="tab-bar">
+                    <div class="tab-item active">Semua</div>
+                    <div class="tab-item">Aktif</div>
+                    <div class="tab-item">Selesai</div>
+                </div>
+
+                <div class="card">
+                    <div class="todo-item">
+                        <div class="todo-checkbox"></div>
+                        <div class="todo-details">
+                            <h4>Laporan UI/UX</h4>
+                            <p>Deadline 3 Mei</p>
+                            <span class="badge-priority p-high">Prioritas Tinggi</span>
+                        </div>
+                    </div>
+                    <div class="todo-item">
+                        <div class="todo-checkbox"></div>
+                        <div class="todo-details">
+                            <h4>Quiz Basis Data</h4>
+                            <p>Deadline 5 Mei</p>
+                            <span class="badge-priority p-medium">Prioritas Sedang</span>
+                        </div>
+                    </div>
+                    <div class="todo-item">
+                        <div class="todo-checkbox"></div>
+                        <div class="todo-details">
+                            <h4>Makalah Pancasila</h4>
+                            <p>Deadline 10 Mei</p>
+                            <span class="badge-priority p-low">Prioritas Rendah</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="screen-catatan" class="app-screen">
+                <div class="header-title">Catatan Kuliah</div>
+                <div class="header-subtitle">Simpan catatan per mata kuliah dalam folder</div>
+                
+                <div class="search-container">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" class="search-input" placeholder="Cari catatan...">
+                </div>
+
+                <div class="folder-item" onclick="goToScreen('screen-pencarian')">
+                    <span class="folder-icon">📁</span>
+                    <div style="font-weight: 600; font-size: 14px;">Matematika</div>
+                </div>
+                <div class="folder-item" onclick="goToScreen('screen-pencarian')">
+                    <span class="folder-icon">📁</span>
+                    <div style="font-weight: 600; font-size: 14px;">Basis Data</div>
+                </div>
+                <div class="folder-item" onclick="goToScreen('screen-pencarian')">
+                    <span class="folder-icon">📁</span>
+                    <div style="font-weight: 600; font-size: 14px;">Bahasa Inggris</div>
+                </div>
+                <div class="folder-item" onclick="goToScreen('screen-pencarian')">
+                    <span class="folder-icon">📁</span>
+                    <div style="font-weight: 600; font-size: 14px;">Pancasila</div>
+                </div>
+            </div>
+
+            <div id="screen-timer" class="app-screen">
+                <div class="header-title" style="text-align:center;">Timer Fokus</div>
+                <div class="header-subtitle" style="text-align:center;">Timer Pomodoro untuk fokus belajar</div>
+
+                <div style="display:flex; justify-content:center; gap:8px; margin-bottom:12px;">
+                    <span class="badge-priority p-high">Pomodoro</span>
+                    <span class="badge-priority p-low">Short Break</span>
+                </div>
+
+                <div class="countdown-circle">
+                    <div class="timer-numbers">25:00</div>
+                </div>
+                <div style="text-align:center; font-weight:600; font-size:14px; margin-top:10px;">Ayo fokus! 💪</div>
+                <button class="btn-main" onclick="alert('Timer Dimulai!')">Mulai</button>
+            </div>
+
+            <div id="screen-grup" class="app-screen">
+                <div class="header-title">Grup Belajar</div>
+                <div class="header-subtitle">Gabung grup, berbagi materi, dan chat</div>
+
+                <div class="search-container">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" class="search-input" placeholder="Cari grup...">
+                </div>
+
+                <div class="grup-item">
+                    <div class="grup-info">
+                        <div class="grup-avatar">UI</div>
+                        <div>
+                            <h4 style="font-size:14px;">UI/UX 2024</h4>
+                            <p style="font-size:11px; color:var(--text-muted);">12 anggota</p>
+                        </div>
+                    </div>
+                    <span>💬</span>
+                </div>
+                <div class="grup-item">
+                    <div class="grup-info">
+                        <div class="grup-avatar">BD</div>
+                        <div>
+                            <h4 style="font-size:14px;">Basis Data A</h4>
+                            <p style="font-size:11px; color:var(--text-muted);">8 anggota</p>
+                        </div>
+                    </div>
+                    <span>💬</span>
+                </div>
+            </div>
+
+            <div id="screen-progress" class="app-screen">
+                <div class="header-title">Progress Belajar</div>
+                <div class="header-subtitle">Lihat perkembangan tugas dan waktu belajar</div>
+
+                <div class="card">
+                    <h4 style="font-size:13px;">Waktu Belajar Minggu Ini</h4>
+                    <div style="font-size: 22px; font-weight:700; color:var(--primary); margin:4px 0 14px 0;">12 jam 30 menit</div>
+                    
+                    <div class="chart-mock">
+                        <div class="chart-bar-wrapper"><div class="chart-bar" style="height: 40px;"></div><div class="chart-day">Sen</div></div>
+                        <div class="chart-bar-wrapper"><div class="chart-bar" style="height: 65px;"></div><div class="chart-day">Sel</div></div>
+                        <div class="chart-bar-wrapper"><div class="chart-bar" style="height: 35px;"></div><div class="chart-day">Rab</div></div>
+                        <div class="chart-bar-wrapper"><div class="chart-bar" style="height: 85px;"></div><div class="chart-day">Kam</div></div>
+                        <div class="chart-bar-wrapper"><div class="chart-bar" style="height: 50px;"></div><div class="chart-day">Jum</div></div>
+                        <div class="chart-bar-wrapper"><div class="chart-bar" style="height: 20px;"></div><div class="chart-day">Sab</div></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="screen-ai" class="app-screen">
+                <div class="header-title">AI Assistant 🤖</div>
+                <div class="header-subtitle">Tanya materi, dapat ringkasan & rekomendasi</div>
+
+                <div class="ai-chat-box">
+                    <strong>StudyMate AI:</strong> Hai Maya! Mau tanya materi kuliah atau butuh rekomendasi rangkuman bab apa hari ini?
+                </div>
+
+                <div class="chat-input-wrapper">
+                    <input type="text" class="chat-input" placeholder="Tanya apa saja...">
+                    <button class="chat-send-btn" onclick="alert('Pesan terkirim ke AI!')">➔</button>
+                </div>
+            </div>
+
+            <div id="screen-pencarian" class="app-screen">
+                <div class="header-title">Pencarian Materi</div>
+                <div class="header-subtitle">Cari catatan atau file dengan cepat</div>
+
+                <div class="search-container">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" class="search-input" value="Struktur Database">
+                </div>
+
+                <div class="card" style="padding:12px; margin-bottom:8px;">
+                    <div style="font-size:13px; font-weight:600;">📄 Struktur Database (Basis Data)</div>
+                </div>
+                <div class="card" style="padding:12px; margin-bottom:8px;">
+                    <div style="font-size:13px; font-weight:600;">📄 Chapter 2 - UI Design (UI/UX)</div>
+                </div>
+            </div>
+
+            <div id="screen-fokus-mode" class="app-screen">
+                <div class="header-title">Mode Fokus</div>
+                <div class="header-subtitle">Fokus pada tujuanmu, singkirkan distraksi</div>
+                
+                <div style="text-align:center; font-size:44px; margin:16px 0;">🏔️</div>
+
+                <div class="focus-card">
+                    <h3>Aktifkan Mode Fokus</h3>
+                    <p style="font-size:11px; margin-top:4px; opacity:0.9;">Aplikasi media sosial akan diblokir sementara waktu.</p>
+                    <button onclick="alert('Mode Fokus Berhasil Diaktifkan!')">Mulai Sekarang</button>
+                </div>
+            </div>
+
+            <div id="screen-gamifikasi" class="app-screen">
+                <div class="header-title">Motivasi & Misi</div>
+                <div class="header-subtitle">Streak, badge, dan poin untuk motivasi</div>
+
+                <div class="card" style="text-align:center; padding:12px;">
+                    <div style="font-size:24px;">🏆</div>
+                    <h3 style="font-size:16px;">Level 7</h3>
+                    <p style="font-size:11px; color:var(--text-muted);">2500 XP</p>
+                </div>
+
+                <div class="streak-container">
+                    <span>🔥</span>
+                    <div>
+                        <div style="font-weight:700; font-size:13px;">Streak Belajar 7 Hari</div>
+                        <div style="font-size:11px; color:var(--text-muted);">Kamu konsisten berturut-turut!</div>
+                    </div>
+                </div>
+
+                <h4 style="font-size:13px; margin:14px 0 6px 0;">Badge Milikmu</h4>
+                <div class="badge-grid">
+                    <div class="badge-item">⭐<div class="badge-title">Star Kid</div></div>
+                    <div class="badge-item">📖<div class="badge-title">Kutu Buku</div></div>
+                    <div class="badge-item">⏱️<div class="badge-title">Pomodoro</div></div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="bottom-nav">
+            <div class="nav-item active" onclick="clickNav(this, 'screen-dashboard')">
+                <span class="nav-icon">🏠</span>
+                <span>Beranda</span>
+            </div>
+            <div class="nav-item" onclick="clickNav(this, 'screen-todo')">
+                <span class="nav-icon">📅</span>
+                <span>Tugas</span>
+            </div>
+            <div class="nav-item" onclick="clickNav(this, 'screen-catatan')">
+                <span class="nav-icon">📁</span>
+                <span>Catatan</span>
+            </div>
+            <div class="nav-item" onclick="clickNav(this, 'screen-timer')">
+                <span class="nav-icon">⏱️</span>
+                <span>Fokus</span>
+            </div>
+            <div class="nav-item" onclick="clickNav(this, 'screen-progress')">
+                <span class="nav-icon">📈</span>
+                <span>Progress</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Navigasi Tab Bottom Bar
+        function clickNav(element, screenId) {
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            element.classList.add('active');
+            goToScreen(screenId);
+        }
+
+        // Berpindah Layar secara Real-time
+        function goToScreen(screenId) {
+            document.querySelectorAll('.app-screen').forEach(screen => screen.classList.remove('active'));
+            const target = document.getElementById(screenId);
+            if(target) {
+                target.classList.add('active');
+            }
+            document.getElementById('demoMenu').style.display = 'none';
+        }
+
+        // Toggle drop down menu demo mockup di atas kanan layar
+        function toggleDemoMenu() {
+            const menu = document.getElementById('demoMenu');
+            menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+        }
+    </script>
+</body>
+</html>
