@@ -37,16 +37,16 @@
 
         /* Container Pembungkus agar pas seukuran Layar HP Android */
         .phone-container {
-            width: 100%;
-            max-width: 412px; /* Standar resolusi Google Pixel / Android modern */
-            height: 70vh;
-            max-height: 700px;
-            background-color: var(--bg-color);
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 12px 40px rgba(0,0,0,0.6);
-            display: flex;
-            flex-direction: column;
+         width: 100%;
+         max-width: 412px;
+         height: 100dvh; /* dvh akan otomatis menyesuaikan jika ada address bar browser */
+         background-color: var(--bg-color);
+         position: relative;
+         overflow: hidden;
+         display: flex;
+         flex-direction: column;
+        margin: 0 auto;
+        }
         }
 
         /* Android Status Bar Simulation */
